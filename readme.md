@@ -235,15 +235,3 @@ Ce projet démontre :
 ✔ transformation ETL
 ✔ stockage multi-systèmes
 ✔ exposition API REST
-
----
-
-# 🧠 RÉSUMÉ PROFESSEUR
-
-Le projet montre une chaîne complète de data engineering :
-
-* source → traitement → stockage → exposition
-
----
-
-# 🚀 FIN DU PROJET
