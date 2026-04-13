@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+
+  mongo:
+    image: mongo
+    container_name: mongo_db
+    ports:
+      - "27017:27017"
+
+  postgres_dw:
+    image: postgres:15
+    container_name: postgres_dw
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dw
+    ports:
+      - "5432:5432"
+
+  app_data:
+    build: .
+    container_name: app_data
+    depends_on:
+      - mongo
+      - postgres_dw
+
+  api:
+    build: .
+    container_name: api
+    command: uvicorn app.api.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres_dw
