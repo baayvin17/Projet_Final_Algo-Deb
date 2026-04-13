@@ -119,16 +119,34 @@ tips (
 
 ---
 
-# 6. API REST
+# Vérifier PostgreSQL
+docker exec -it postgres_dw psql -U postgres
 
-## 📌 Lancement API
+\c dw
+SELECT * FROM tips LIMIT 5;
+# Lancer l’API
+uvicorn app.api.main:app --reload
 
-```
-http://localhost:8000/docs
-```
+Endpoints :
 
----
+http://localhost:8000/
+http://localhost:8000/tips
+http://localhost:8000/stats
+# Lancer le Dashboard
+streamlit run streamlit_app.py
+📊 Dashboard
 
+Le dashboard Streamlit permet :
+
+visualisation des KPI
+analyse des tips
+filtres interactifs
+🖼️ Scraping
+
+Une image est téléchargée automatiquement :
+
+docker compose run app_data
+docker cp NOM:/app/data/images ./images
 ## Endpoints
 
 ### GET /
@@ -235,3 +253,4 @@ Ce projet démontre :
 ✔ transformation ETL
 ✔ stockage multi-systèmes
 ✔ exposition API REST
+
