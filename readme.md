@@ -61,7 +61,7 @@ cd Projet_Final
 
 ---
 
-## 🐳 2. Lancer avec Docker
+## 🐳 2. Lancer avec Docker dans 1er Terminal
 
 ```bash
 docker compose down -v
@@ -70,7 +70,7 @@ docker compose up --build
 
 ---
 
-## 🔥 3. Vérifier les containers
+## 🔥 3. Vérifier les containers dans un 2eme Terminal 
 
 ```bash
 docker ps
@@ -119,20 +119,23 @@ tips (
 
 ---
 
-# Vérifier PostgreSQL
+# Vérifier PostgreSQL dans le 2 eme Terminal
 docker exec -it postgres_dw psql -U postgres
 
 \c dw
 SELECT * FROM tips LIMIT 5;
-# Lancer l’API
+
+# Lancer l’API dans un 3eme Terminal 
 uvicorn app.api.main:app --reload
 
 Endpoints :
 
 http://localhost:8000/
+http://localhost:8000/docs#/
 http://localhost:8000/tips
 http://localhost:8000/stats
-# Lancer le Dashboard
+
+# Lancer le Dashboard dans un 4eme Terminal
 streamlit run streamlit_app.py
 📊 Dashboard
 
