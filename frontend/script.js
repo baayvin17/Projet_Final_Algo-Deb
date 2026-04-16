@@ -1,65 +1,6 @@
-const listingsData = [
-  {
-    id: 1,
-    city: "Paris",
-    title: "Appartement cosy au cœur de Paris",
-    travelers: 2,
-    price: 145,
-    rating: 4.8,
-    image:
-      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80"
-  },
-  {
-    id: 2,
-    city: "Lyon",
-    title: "Loft moderne avec vue sur la ville",
-    travelers: 4,
-    price: 120,
-    rating: 4.7,
-    image:
-      "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80"
-  },
-  {
-    id: 3,
-    city: "Marseille",
-    title: "Studio lumineux proche du Vieux-Port",
-    travelers: 2,
-    price: 95,
-    rating: 4.6,
-    image:
-      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80"
-  },
-  {
-    id: 4,
-    city: "Bordeaux",
-    title: "Maison élégante avec terrasse",
-    travelers: 6,
-    price: 180,
-    rating: 4.9,
-    image:
-      "https://images.unsplash.com/photo-1448630360428-65456885c650?auto=format&fit=crop&w=1200&q=80"
-  },
-  {
-    id: 5,
-    city: "Nice",
-    title: "Appartement bord de mer",
-    travelers: 3,
-    price: 160,
-    rating: 4.8,
-    image:
-      "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=1200&q=80"
-  },
-  {
-    id: 6,
-    city: "Toulouse",
-    title: "Logement chaleureux et spacieux",
-    travelers: 5,
-    price: 110,
-    rating: 4.5,
-    image:
-      "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=80"
-  }
-];
+const API_URL = "http://localhost:8000/hebergements?limit=100";
+const DEFAULT_IMAGE =
+  "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80";
 
 const listingsContainer = document.getElementById("listings");
 const cityInput = document.getElementById("cityInput");
@@ -67,7 +8,40 @@ const travelersInput = document.getElementById("travelers");
 const searchForm = document.getElementById("searchForm");
 const suggestionsBox = document.getElementById("suggestions");
 
-const availableCities = [...new Set(listingsData.map(listing => listing.city))];
+let listingsData = [];
+let availableCities = [];
+
+async function loadListings() {
+  try {
+    const response = await fetch(API_URL);
+    const data = await response.json();
+
+    listingsData = data.map((item) => ({
+      id: item.id,
+      city: item.commune || "Commune inconnue",
+      title: item.nom || "Hébergement sans nom",
+      travelers: Number(item.capacite) || 0,
+      rating: item.nb_etoiles ? `${item.nb_etoiles}/5` : "Non noté",
+      type: item.type_hebergement || "Hébergement",
+      classement: item.classement || "Non classé",
+      departement: item.departement || "Non renseigné",
+      image: DEFAULT_IMAGE
+    }));
+
+    availableCities = [...new Set(listingsData.map((listing) => listing.city))]
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
+
+    displayListings(listingsData);
+  } catch (error) {
+    console.error("Erreur lors du chargement des hébergements :", error);
+    listingsContainer.innerHTML = `
+      <div class="no-results">
+        Impossible de charger les données depuis l’API.
+      </div>
+    `;
+  }
+}
 
 function displayListings(listings) {
   listingsContainer.innerHTML = "";
@@ -92,9 +66,12 @@ function displayListings(listings) {
           <span class="card-city">${listing.city}</span>
           <span class="card-rating">⭐ ${listing.rating}</span>
         </div>
+
         <p class="card-title">${listing.title}</p>
-        <p class="card-details">${listing.travelers} voyageurs</p>
-        <p class="card-price">${listing.price} € / nuit</p>
+        <p class="card-details"><strong>Type :</strong> ${listing.type}</p>
+        <p class="card-details"><strong>Capacité :</strong> ${listing.travelers} personne(s)</p>
+        <p class="card-details"><strong>Département :</strong> ${listing.departement}</p>
+        <span class="card-badge">${listing.classement}</span>
       </div>
     `;
 
@@ -148,8 +125,8 @@ function showSuggestions(value) {
 
     item.addEventListener("click", () => {
       cityInput.value = city;
-      suggestionsBox.innerHTML = "";
       suggestionsBox.style.display = "none";
+      suggestionsBox.innerHTML = "";
       filterListings();
     });
 
@@ -166,8 +143,8 @@ travelersInput.addEventListener("input", filterListings);
 
 searchForm.addEventListener("submit", (e) => {
   e.preventDefault();
-  filterListings();
   suggestionsBox.style.display = "none";
+  filterListings();
 });
 
 document.addEventListener("click", (e) => {
@@ -176,4 +153,4 @@ document.addEventListener("click", (e) => {
   }
 });
 
-displayListings(listingsData);
+loadListings();

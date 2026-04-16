@@ -3,11 +3,20 @@ from fastapi.responses import Response
 from sqlalchemy import create_engine, text
 import pandas as pd
 import json
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="API Hébergements Touristiques 🏨",
     description="API REST - Hébergements classés en France (Atout France / data.gouv.fr)",
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 DATABASE_URL = "postgresql+psycopg2://postgres:postgres@postgres_dw:5432/dw"

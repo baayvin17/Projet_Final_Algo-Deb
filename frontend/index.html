@@ -3,33 +3,43 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AirPnP</title>
+  <title>StayDream - Hébergements classés</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="hero">
     <div class="overlay">
-      <h1>Trouvez votre prochain hébergement</h1>
-      <p>Des logements uniques, dans les plus belles villes.</p>
+      <div class="hero-content">
+        <h1>Trouvez votre prochain hébergement</h1>
+        <p>
+          Explorez des hébergements classés partout en France grâce à une recherche simple,
+          rapide et intuitive.
+        </p>
 
-      <form class="search-bar" id="searchForm" autocomplete="off">
-        <div class="search-field autocomplete-container">
-          <label for="cityInput">Destination</label>
-          <input
-            type="text"
-            id="cityInput"
-            placeholder="Rechercher une ville"
-          />
-          <div id="suggestions" class="suggestions"></div>
-        </div>
+        <form class="search-bar" id="searchForm" autocomplete="off">
+          <div class="search-field autocomplete-container">
+            <label for="cityInput">Destination</label>
+            <input
+              type="text"
+              id="cityInput"
+              placeholder="Rechercher une commune"
+            />
+            <div id="suggestions" class="suggestions"></div>
+          </div>
 
-        <div class="search-field">
-          <label for="travelers">Voyageurs</label>
-          <input type="number" id="travelers" min="1" placeholder="Ex : 2" />
-        </div>
+          <div class="search-field">
+            <label for="travelers">Voyageurs</label>
+            <input
+              type="number"
+              id="travelers"
+              min="1"
+              placeholder="Capacité minimale"
+            />
+          </div>
 
-        <button type="submit">Rechercher</button>
-      </form>
+          <button type="submit">Rechercher</button>
+        </form>
+      </div>
     </div>
   </header>
 

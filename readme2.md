@@ -107,6 +107,14 @@ Attendu :
 
 ---
 
+Lancer la page web : 
+
+* Fichier html : LiveServer ou /frontend  python -m http.server 5500
+
+Page : http://localhost:5500
+
+---
+
 # 5. PIPELINE AUTOMATIQUE
 
 Le pipeline s'exécute automatiquement au démarrage :
@@ -178,7 +186,7 @@ SELECT type_hebergement, COUNT(*) FROM hebergements GROUP BY type_hebergement;
 ## Lancer l'API dans un 3eme Terminal
 
 ```bash
-uvicorn app.api.main:app --reload
+docker compose up --build api
 ```
 
 ## Documentation interactive
@@ -188,6 +196,13 @@ http://localhost:8000/docs
 ```
 
 ## Endpoints
+
+Principal : 
+http://localhost:8000/docs
+
+Utils : 
+http://localhost:8000/stats
+http://localhost:8000/hebergements
 
 ### GET /
 Statut de l'API
