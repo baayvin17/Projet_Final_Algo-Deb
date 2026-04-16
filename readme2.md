@@ -345,6 +345,8 @@ Connexion directe à PostgreSQL :
 
 Visuels disponibles :
 
+![img.png](images/img.png)
+
 * Répartition des hébergements par type
 * Nombre d'hébergements par département
 * Moyenne des étoiles par type

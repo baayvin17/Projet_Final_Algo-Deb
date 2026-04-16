@@ -1,22 +1,55 @@
 from fastapi import FastAPI, Query
-import psycopg2
+from fastapi.responses import Response
+from sqlalchemy import create_engine, text
 import pandas as pd
+import json
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
-    title="API Hébergements Touristiques ",
-    description="API REST pour explorer les hébergements classés en France (source : Atout France / data.gouv.fr)",
+    title="API Hébergements Touristiques 🏨",
+    description="API REST - Hébergements classés en France (Atout France / data.gouv.fr)",
     version="1.0.0"
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+DATABASE_URL = "postgresql+psycopg2://postgres:postgres@postgres_dw:5432/dw"
+
+
 # ---------------------------
-# CONNEXION POSTGRESQL
+# HELPERS
 # ---------------------------
-def get_conn():
-    return psycopg2.connect(
-        host="postgres_dw",
-        database="dw",
-        user="postgres",
-        password="postgres"
+def get_engine():
+    return create_engine(DATABASE_URL)
+
+
+def query_df(sql, params=None):
+    engine = get_engine()
+    with engine.connect() as conn:
+        df = pd.read_sql(text(sql), conn, params=params or {})
+    return df
+
+
+def to_json(df):
+    """Retourne une liste — pandas gère NaN → null nativement"""
+    return Response(
+        content=df.to_json(orient="records", force_ascii=False),
+        media_type="application/json"
+    )
+
+
+def to_json_single(df):
+    """Retourne un seul objet JSON"""
+    records = json.loads(df.to_json(orient="records", force_ascii=False))
+    return Response(
+        content=json.dumps(records[0], ensure_ascii=False),
+        media_type="application/json"
     )
 
 
@@ -25,50 +58,48 @@ def get_conn():
 # ---------------------------
 @app.get("/")
 def home():
-    return {"message": "API Hébergements Touristiques OK "}
+    return {"message": "API Hébergements Touristiques OK 🏨"}
 
 
 # ---------------------------
 # ROUTE 2 : GET HEBERGEMENTS
-# Filtres : type, departement, nb_etoiles
+# Filtres : type, departement, nb_etoiles, commune
 # Pagination : limit + offset
 # ---------------------------
 @app.get("/hebergements")
 def get_hebergements(
-    limit: int = Query(10, ge=1, le=100, description="Nombre de résultats"),
+    limit: int = Query(10, ge=1, le=25000, description="Nombre de résultats"),
     offset: int = Query(0, ge=0, description="Décalage pour la pagination"),
     type_hebergement: str = Query(None, description="Ex: HÔTEL DE TOURISME, CAMPING"),
     departement: str = Query(None, description="Ex: 75, 13, 69"),
     nb_etoiles: float = Query(None, description="Ex: 1, 2, 3, 4, 5"),
     commune: str = Query(None, description="Ex: PARIS, LYON")
 ):
-    conn = get_conn()
-
-    query = "SELECT * FROM hebergements WHERE 1=1"
-    params = []
+    sql = "SELECT * FROM hebergements WHERE 1=1"
+    params = {}
 
     if type_hebergement:
-        query += " AND type_hebergement ILIKE %s"
-        params.append(f"%{type_hebergement}%")
+        sql += " AND type_hebergement ILIKE :type_hebergement"
+        params["type_hebergement"] = f"%{type_hebergement}%"
 
     if departement:
-        query += " AND departement = %s"
-        params.append(departement)
+        sql += " AND departement = :departement"
+        params["departement"] = departement
 
     if nb_etoiles is not None:
-        query += " AND nb_etoiles = %s"
-        params.append(nb_etoiles)
+        sql += " AND nb_etoiles = :nb_etoiles"
+        params["nb_etoiles"] = nb_etoiles
 
     if commune:
-        query += " AND commune ILIKE %s"
-        params.append(f"%{commune}%")
+        sql += " AND commune ILIKE :commune"
+        params["commune"] = f"%{commune}%"
 
-    query += " ORDER BY id LIMIT %s OFFSET %s"
-    params.extend([limit, offset])
+    sql += " ORDER BY id LIMIT :limit OFFSET :offset"
+    params["limit"] = limit
+    params["offset"] = offset
 
-    df = pd.read_sql(query, conn, params=params)
-    conn.close()
-    return df.to_dict(orient="records")
+    df = query_df(sql, params)
+    return to_json(df)
 
 
 # ---------------------------
@@ -76,19 +107,17 @@ def get_hebergements(
 # ---------------------------
 @app.get("/stats")
 def get_stats():
-    conn = get_conn()
-    df = pd.read_sql("""
+    df = query_df("""
         SELECT
-            COUNT(*)                        AS total_hebergements,
+            COUNT(*)                            AS total_hebergements,
             ROUND(AVG(nb_etoiles)::numeric, 2)  AS moyenne_etoiles,
             ROUND(AVG(capacite)::numeric, 2)    AS moyenne_capacite,
-            SUM(capacite)                   AS capacite_totale,
-            SUM(nb_chambres)                AS total_chambres,
-            SUM(nb_emplacements)            AS total_emplacements
+            SUM(capacite)                       AS capacite_totale,
+            SUM(nb_chambres)                    AS total_chambres,
+            SUM(nb_emplacements)                AS total_emplacements
         FROM hebergements
-    """, conn)
-    conn.close()
-    return df.to_dict(orient="records")[0]
+    """)
+    return to_json_single(df)
 
 
 # ---------------------------
@@ -96,8 +125,7 @@ def get_stats():
 # ---------------------------
 @app.get("/stats/type")
 def stats_par_type():
-    conn = get_conn()
-    df = pd.read_sql("""
+    df = query_df("""
         SELECT
             type_hebergement,
             COUNT(*)                            AS nb_hebergements,
@@ -106,9 +134,8 @@ def stats_par_type():
         FROM hebergements
         GROUP BY type_hebergement
         ORDER BY nb_hebergements DESC
-    """, conn)
-    conn.close()
-    return df.to_dict(orient="records")
+    """)
+    return to_json(df)
 
 
 # ---------------------------
@@ -116,8 +143,7 @@ def stats_par_type():
 # ---------------------------
 @app.get("/stats/departement")
 def stats_par_departement(limit: int = Query(20, ge=1, le=100)):
-    conn = get_conn()
-    df = pd.read_sql(f"""
+    df = query_df("""
         SELECT
             departement,
             COUNT(*)        AS nb_hebergements,
@@ -126,10 +152,9 @@ def stats_par_departement(limit: int = Query(20, ge=1, le=100)):
         FROM hebergements
         GROUP BY departement
         ORDER BY nb_hebergements DESC
-        LIMIT {limit}
-    """, conn)
-    conn.close()
-    return df.to_dict(orient="records")
+        LIMIT :limit
+    """, {"limit": limit})
+    return to_json(df)
 
 
 # ---------------------------
@@ -137,8 +162,7 @@ def stats_par_departement(limit: int = Query(20, ge=1, le=100)):
 # ---------------------------
 @app.get("/stats/classement")
 def stats_par_classement():
-    conn = get_conn()
-    df = pd.read_sql("""
+    df = query_df("""
         SELECT
             classement,
             COUNT(*) AS nb_hebergements,
@@ -147,9 +171,8 @@ def stats_par_classement():
         WHERE classement IS NOT NULL
         GROUP BY classement
         ORDER BY nb_hebergements DESC
-    """, conn)
-    conn.close()
-    return df.to_dict(orient="records")
+    """)
+    return to_json(df)
 
 
 # ---------------------------
@@ -157,8 +180,7 @@ def stats_par_classement():
 # ---------------------------
 @app.get("/top")
 def top_hebergements(limit: int = Query(10, ge=1, le=50)):
-    conn = get_conn()
-    df = pd.read_sql(f"""
+    df = query_df("""
         SELECT
             nom,
             type_hebergement,
@@ -171,10 +193,9 @@ def top_hebergements(limit: int = Query(10, ge=1, le=50)):
         FROM hebergements
         WHERE capacite IS NOT NULL
         ORDER BY capacite DESC
-        LIMIT {limit}
-    """, conn)
-    conn.close()
-    return df.to_dict(orient="records")
+        LIMIT :limit
+    """, {"limit": limit})
+    return to_json(df)
 
 
 # ---------------------------
@@ -185,27 +206,26 @@ def recherche(
     q: str = Query(..., description="Nom ou mot-clé à rechercher"),
     limit: int = Query(10, ge=1, le=50)
 ):
-    conn = get_conn()
-    df = pd.read_sql("""
+    df = query_df("""
         SELECT * FROM hebergements
-        WHERE nom ILIKE %s
+        WHERE nom ILIKE :q
         ORDER BY nom
-        LIMIT %s
-    """, conn, params=(f"%{q}%", limit))
-    conn.close()
-    return df.to_dict(orient="records")
+        LIMIT :limit
+    """, {"q": f"%{q}%", "limit": limit})
+    return to_json(df)
 
 
 # ---------------------------
 # ROUTE 9 : DETAIL PAR ID
 # ---------------------------
 @app.get("/hebergements/{id}")
-def get_hebergement_by_id(id: int):
-    conn = get_conn()
-    df = pd.read_sql("""
-        SELECT * FROM hebergements WHERE id = %s
-    """, conn, params=(id,))
-    conn.close()
+def get_by_id(id: int):
+    df = query_df("""
+        SELECT * FROM hebergements WHERE id = :id
+    """, {"id": id})
     if df.empty:
-        return {"error": f"Hébergement {id} non trouvé"}
-    return df.to_dict(orient="records")[0]
+        return Response(
+            content=json.dumps({"error": f"Hébergement {id} non trouvé"}),
+            media_type="application/json"
+        )
+    return to_json_single(df)

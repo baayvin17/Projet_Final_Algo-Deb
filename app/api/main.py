@@ -68,7 +68,7 @@ def home():
 # ---------------------------
 @app.get("/hebergements")
 def get_hebergements(
-    limit: int = Query(10, ge=1, le=100, description="Nombre de résultats"),
+    limit: int = Query(10, ge=1, le=25000, description="Nombre de résultats"),
     offset: int = Query(0, ge=0, description="Décalage pour la pagination"),
     type_hebergement: str = Query(None, description="Ex: HÔTEL DE TOURISME, CAMPING"),
     departement: str = Query(None, description="Ex: 75, 13, 69"),
