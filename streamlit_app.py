@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 import plotly.express as px
 
-API_URL = "http://localhost:8000"
+API_URL = "http://api:8000"
 
 st.set_page_config(page_title="Dashboard Hébergements", layout="wide")
 
@@ -35,8 +35,8 @@ st.title("🏨 Dashboard Hébergements Touristiques")
 @st.cache_data
 def load_data():
     all_data = []
-    for offset in range(0, 1000, 100):
-        res = requests.get(f"{API_URL}/hebergements?limit=100&offset={offset}")
+    for offset in range(0, 1000, 25000):
+        res = requests.get(f"{API_URL}/hebergements?limit=25000&offset={offset}")
         if res.status_code == 200:
             all_data.extend(res.json())
     return pd.DataFrame(all_data)

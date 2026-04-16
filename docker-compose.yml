@@ -37,3 +37,12 @@ services:
       - postgres_dw
     volumes:
       - .:/app
+
+  streamlit:
+    build: .
+    container_name: streamlit_dashboard
+    command: streamlit run streamlit_app.py --server.address 0.0.0.0 --server.port 8501
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
