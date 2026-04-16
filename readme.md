@@ -87,8 +87,9 @@ Attendu :
 
 Lancer la page web : 
 
-* Fichier html : LiveServer
+* Fichier html : LiveServer ou /frontend  python -m http.server 5500
 
+Page : http://localhost:5500
 ---
 
 # 4. PIPELINE AUTOMATIQUE
