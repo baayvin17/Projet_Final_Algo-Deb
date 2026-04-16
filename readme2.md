@@ -180,10 +180,23 @@ SELECT type_hebergement, COUNT(*) FROM hebergements GROUP BY type_hebergement;
 ```
 
 ---
+# 7. Streamlit
 
-# 7. API REST
+## Lancer le Streamlit dans un 3eme Terminal
 
-## Lancer l'API dans un 3eme Terminal
+```bash
+docker compose up --build streamlit
+```
+
+## Documentation interactive
+
+```
+http://localhost:8501
+```
+
+# 8. API REST
+
+## Lancer l'API dans un 4eme Terminal
 
 ```bash
 docker compose up --build api
@@ -287,7 +300,7 @@ Détail d'un hébergement par ID
 
 ---
 
-# 8. DATA LAKE
+# 9. DATA LAKE
 
 Stockage :
 
@@ -302,7 +315,7 @@ Format :
 
 ---
 
-# 9. MONGODB
+# 10. MONGODB
 
 Collections :
 
@@ -317,7 +330,7 @@ Objectif :
 
 ---
 
-# 10. QUALITÉ DES DONNÉES
+# 11. QUALITÉ DES DONNÉES
 
 Traitements appliqués :
 
@@ -331,7 +344,7 @@ Traitements appliqués :
 
 ---
 
-# 11. POWER BI (BI)
+# 12. POWER BI (BI)
 
 Connexion directe à PostgreSQL :
 
@@ -355,7 +368,7 @@ Visuels disponibles :
 
 ---
 
-# 12. DATA ENGINEERING (ARCHITECTURE)
+# 13. DATA ENGINEERING (ARCHITECTURE)
 
 Respect des principes :
 
@@ -366,7 +379,7 @@ Respect des principes :
 
 ---
 
-# 13. LIMITES
+# 14. LIMITES
 
 * Pas de coordonnées GPS dans le dataset source (pas de carte)
 * Pas de streaming temps réel
@@ -374,7 +387,7 @@ Respect des principes :
 
 ---
 
-# 14. AMÉLIORATIONS POSSIBLES
+# 15. AMÉLIORATIONS POSSIBLES
 
 * Tests Pytest complets
 * Orchestration Airflow
@@ -383,7 +396,7 @@ Respect des principes :
 
 ---
 
-# 15. CONCLUSION
+# 16. CONCLUSION
 
 Ce projet démontre :
 
