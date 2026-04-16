@@ -1,124 +1,195 @@
 import streamlit as st
 import requests
 import pandas as pd
+import plotly.express as px
 
 API_URL = "http://localhost:8000"
 
-st.set_page_config(page_title="Dashboard Tips", layout="wide")
+st.set_page_config(page_title="Dashboard Hébergements", layout="wide")
 
-st.title("📊 Dashboard Analyse des Tips (Restaurants)")
+# -----------------------
+# STYLE
+# -----------------------
+st.markdown("""
+<style>
+.block-container {
+    padding-top: 2rem;
+}
+
+.kpi-card {
+    background: linear-gradient(135deg, #ff5a5f, #ff9966);
+    padding: 20px;
+    border-radius: 12px;
+    color: white;
+    text-align: center;
+    font-size: 18px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.title("🏨 Dashboard Hébergements Touristiques")
 
 # -----------------------
 # LOAD DATA
 # -----------------------
 @st.cache_data
 def load_data():
-    res = requests.get(f"{API_URL}/tips?limit=500")
-    data = res.json()
-    return pd.DataFrame(data)
+    all_data = []
+    for offset in range(0, 1000, 100):
+        res = requests.get(f"{API_URL}/hebergements?limit=100&offset={offset}")
+        if res.status_code == 200:
+            all_data.extend(res.json())
+    return pd.DataFrame(all_data)
 
 df = load_data()
 
+if df.empty:
+    st.error("❌ Aucune donnée récupérée")
+    st.stop()
+
 # -----------------------
-# SIDEBAR FILTRES
+# CLEAN TYPES
+# -----------------------
+df["capacite"] = pd.to_numeric(df["capacite"], errors="coerce").fillna(0)
+df["nb_etoiles"] = pd.to_numeric(df["nb_etoiles"], errors="coerce").fillna(0)
+df["nb_chambres"] = pd.to_numeric(df["nb_chambres"], errors="coerce").fillna(0)
+
+# -----------------------
+# SIDEBAR
 # -----------------------
 st.sidebar.header("🔎 Filtres")
 
-if "day" in df.columns:
-    selected_days = st.sidebar.multiselect("Jour", df["day"].unique(), default=df["day"].unique())
-else:
-    selected_days = []
+types = st.sidebar.multiselect(
+    "Type d’hébergement",
+    sorted(df["type_hebergement"].dropna().unique())
+)
 
-if "sex" in df.columns:
-    selected_sex = st.sidebar.multiselect("Sexe", df["sex"].unique(), default=df["sex"].unique())
-else:
-    selected_sex = []
+communes = st.sidebar.multiselect(
+    "Commune",
+    sorted(df["commune"].dropna().unique())
+)
 
-if "smoker" in df.columns:
-    selected_smoker = st.sidebar.multiselect("Fumeur", df["smoker"].unique(), default=df["smoker"].unique())
-else:
-    selected_smoker = []
+min_star = int(df["nb_etoiles"].min())
+max_star = int(df["nb_etoiles"].max())
+
+stars_range = st.sidebar.slider(
+    "Nombre d’étoiles",
+    min_value=min_star,
+    max_value=max_star,
+    value=(min_star, max_star)
+)
 
 # -----------------------
-# APPLY FILTERS
+# FILTER
 # -----------------------
 filtered_df = df.copy()
 
-if selected_days:
-    filtered_df = filtered_df[filtered_df["day"].isin(selected_days)]
+if types:
+    filtered_df = filtered_df[filtered_df["type_hebergement"].isin(types)]
 
-if selected_sex:
-    filtered_df = filtered_df[filtered_df["sex"].isin(selected_sex)]
+if communes:
+    filtered_df = filtered_df[filtered_df["commune"].isin(communes)]
 
-if selected_smoker:
-    filtered_df = filtered_df[filtered_df["smoker"].isin(selected_smoker)]
-
-# -----------------------
-# KPIs
-# -----------------------
-st.subheader("📌 Indicateurs Clés")
-
-col1, col2, col3, col4 = st.columns(4)
-
-col1.metric("Transactions", len(filtered_df))
-col2.metric("💰 Total CA", round(filtered_df["total_bill"].sum(), 2))
-col3.metric("💸 Total Tips", round(filtered_df["tip"].sum(), 2))
-col4.metric("📊 Tip Moyen", round(filtered_df["tip"].mean(), 2))
+filtered_df = filtered_df[
+    (filtered_df["nb_etoiles"] >= stars_range[0]) &
+    (filtered_df["nb_etoiles"] <= stars_range[1])
+]
 
 # -----------------------
-# GRAPHS
+# TABS
 # -----------------------
-st.subheader("📈 Analyses")
+tab1, tab2, tab3 = st.tabs(["📊 Dashboard", "🏆 Top & Ranking", "📈 Analyse avancée"])
 
-col1, col2 = st.columns(2)
+# =====================================================
+# 🟢 TAB 1 : DASHBOARD
+# =====================================================
+with tab1:
 
-# Tips par jour
-if "day" in filtered_df.columns:
-    tips_by_day = filtered_df.groupby("day")["tip"].mean()
-    col1.write("💡 Tip moyen par jour")
-    col1.bar_chart(tips_by_day)
+    st.subheader("📌 Indicateurs clés")
 
-# CA par jour
-if "day" in filtered_df.columns:
-    ca_by_day = filtered_df.groupby("day")["total_bill"].sum()
-    col2.write("💰 Chiffre d'affaires par jour")
-    col2.bar_chart(ca_by_day)
+    col1, col2, col3, col4 = st.columns(4)
 
-# -----------------------
-# ANALYSE PAR PROFIL
-# -----------------------
-st.subheader("👥 Analyse Clients")
+    col1.markdown(f'<div class="kpi-card"><h2>{len(filtered_df)}</h2><p>Hébergements</p></div>', unsafe_allow_html=True)
+    col2.markdown(f'<div class="kpi-card"><h2>{int(filtered_df["capacite"].sum())}</h2><p>Capacité</p></div>', unsafe_allow_html=True)
+    col3.markdown(f'<div class="kpi-card"><h2>{round(filtered_df["nb_etoiles"].mean(),2)}</h2><p>Étoiles moyennes</p></div>', unsafe_allow_html=True)
+    col4.markdown(f'<div class="kpi-card"><h2>{int(filtered_df["nb_chambres"].sum())}</h2><p>Chambres</p></div>', unsafe_allow_html=True)
 
-col1, col2 = st.columns(2)
+    st.markdown("---")
 
-# Sexe
-if "sex" in filtered_df.columns:
-    sex_analysis = filtered_df.groupby("sex")["tip"].mean()
-    col1.write("👨‍🦱 Tip moyen par sexe")
-    col1.bar_chart(sex_analysis)
+    col1, col2 = st.columns(2)
 
-# Fumeur
-if "smoker" in filtered_df.columns:
-    smoker_analysis = filtered_df.groupby("smoker")["tip"].mean()
-    col2.write("🚬 Impact du tabac sur les tips")
-    col2.bar_chart(smoker_analysis)
+    top_communes = filtered_df.groupby("commune").size().reset_index(name="count").sort_values("count", ascending=False).head(10)
+    fig1 = px.bar(top_communes, x="commune", y="count", title="Top 10 communes", color="count")
+    col1.plotly_chart(fig1, use_container_width=True)
 
-# -----------------------
-# DISTRIBUTION
-# -----------------------
-st.subheader("📊 Distribution")
+    type_chart = filtered_df.groupby("type_hebergement").size().reset_index(name="count")
+    fig2 = px.pie(type_chart, names="type_hebergement", values="count", title="Répartition des types")
+    col2.plotly_chart(fig2, use_container_width=True)
 
-col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
-col1.write("Distribution des tips")
-col1.bar_chart(filtered_df["tip"])
+    star_chart = filtered_df.groupby("nb_etoiles").size().reset_index(name="count")
+    fig3 = px.bar(star_chart, x="nb_etoiles", y="count", title="Distribution étoiles", color="count")
+    col1.plotly_chart(fig3, use_container_width=True)
 
-col2.write("Distribution des additions")
-col2.bar_chart(filtered_df["total_bill"])
+    fig4 = px.histogram(filtered_df, x="capacite", nbins=30, title="Distribution capacité")
+    col2.plotly_chart(fig4, use_container_width=True)
 
-# -----------------------
-# TABLE DETAILLEE
-# -----------------------
-st.subheader("📋 Données détaillées")
+# =====================================================
+# 🟡 TAB 2 : TOP / SCORE
+# =====================================================
+with tab2:
 
-st.dataframe(filtered_df)
+    st.subheader("🏆 Classement intelligent")
+
+    st.markdown("""
+    👉 Score basé sur :
+    - 70% capacité
+    - 30% qualité (étoiles)
+    """)
+
+    filtered_df["score"] = (
+        filtered_df["capacite"] * 0.7 +
+        filtered_df["nb_etoiles"] * 50
+    )
+
+    top_df = filtered_df.sort_values("score", ascending=False).head(10)
+
+    st.dataframe(
+        top_df[["nom", "commune", "capacite", "nb_etoiles", "score"]],
+        use_container_width=True
+    )
+
+    # Graph TOP
+    fig_top = px.bar(
+        top_df,
+        x="nom",
+        y="score",
+        color="score",
+        title="Top 10 hébergements (score)"
+    )
+    st.plotly_chart(fig_top, use_container_width=True)
+
+# =====================================================
+# 🔵 TAB 3 : ANALYSE AVANCÉE
+# =====================================================
+with tab3:
+
+    st.subheader("📊 Analyse avancée")
+
+    col1, col2 = st.columns(2)
+
+    cap_type = df.groupby("type_hebergement")["capacite"].sum().reset_index()
+    fig5 = px.bar(cap_type, x="type_hebergement", y="capacite", title="Capacité par type")
+    col1.plotly_chart(fig5, use_container_width=True)
+
+    fig6 = px.scatter(df, x="nb_etoiles", y="capacite", title="Étoiles vs capacité")
+    col2.plotly_chart(fig6, use_container_width=True)
+
+    col1, col2 = st.columns(2)
+
+    fig7 = px.histogram(df, x="nb_chambres", title="Distribution chambres")
+    col1.plotly_chart(fig7, use_container_width=True)
+
+    fig8 = px.box(df, x="type_hebergement", y="nb_etoiles", title="Étoiles par type")
+    col2.plotly_chart(fig8, use_container_width=True)
