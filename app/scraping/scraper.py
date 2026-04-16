@@ -2,39 +2,38 @@ import pandas as pd
 import os
 import requests
 
+CSV_URL = "https://data.classement.atout-france.fr/static/exportHebergementsClasses/hebergements_classes.csv"
+
 # ---------------------------
 # FETCH DATA
 # ---------------------------
 def fetch_data():
-    url = "https://raw.githubusercontent.com/mwaskom/seaborn-data/master/tips.csv"
-    df = pd.read_csv(url)
-    return df
-
+    try:
+        print("Téléchargement données Atout France...")
+        df = pd.read_csv(CSV_URL, sep=";", encoding="utf-8")
+        print(f" {len(df)} hébergements récupérés")
+        return df
+    except Exception as e:
+        print(f" Erreur fetch : {e}")
+        raise
 # ---------------------------
 # SAVE RAW
 # ---------------------------
 def save_raw(df):
     os.makedirs("data/raw", exist_ok=True)
-    df.to_csv("data/raw/tips_raw.csv", index=False)
-    print("Données RAW sauvegardées")
+    df.to_csv("data/raw/hebergements_raw.csv", sep=";", index=False)
+    print(" RAW sauvegardé")
 
 # ---------------------------
 # DOWNLOAD IMAGE
 # ---------------------------
 def download_image():
-    url = "http://placekitten.com/300/300"
-
+    url = "https://www.data.gouv.fr/img/logo-header.svg"
     os.makedirs("data/images", exist_ok=True)
-    path = "data/images/sample.jpg"
-
     try:
-        print("Téléchargement image...")
         r = requests.get(url, timeout=10)
-
-        with open(path, "wb") as f:
+        with open("data/images/datagouv.svg", "wb") as f:
             f.write(r.content)
-
-        print("Image téléchargée OK")
-
+        print(" Image téléchargée")
     except Exception as e:
-        print("Erreur téléchargement image :", e)
+        print(f" Erreur image : {e}")

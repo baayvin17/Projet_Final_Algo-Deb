@@ -5,13 +5,13 @@ client = MongoClient("mongodb://mongo:27017/")
 db = client["hebergement"]
 
 def insert_raw():
-    df = pd.read_csv("data/raw/hebergements_raw.csv")
+    df = pd.read_csv("data/raw/hebergements_raw.csv", sep=";", encoding="utf-8")
     db.raw.delete_many({})
     db.raw.insert_many(df.to_dict("records"))
     print("Mongo RAW OK")
 
 def insert_clean():
-    df = pd.read_csv("data/clean/hebergements_clean.csv")
+    df = pd.read_csv("data/clean/hebergements_clean.csv", encoding="utf-8")
     db.clean.delete_many({})
     db.clean.insert_many(df.to_dict("records"))
     print("Mongo CLEAN OK")

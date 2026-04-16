@@ -5,3 +5,6 @@ psycopg2-binary
 fastapi
 uvicorn
 pytest
+streamlit
+sqlalchemy
+psycopg2-binary
