@@ -85,6 +85,12 @@ Attendu :
 
 ---
 
+Lancer la page web : 
+
+* Fichier html : LiveServer
+
+---
+
 # 4. PIPELINE AUTOMATIQUE
 
 Le pipeline s’exécute automatiquement au démarrage :
@@ -125,7 +131,7 @@ docker exec -it postgres_dw psql -U postgres
 \c dw
 SELECT * FROM tips LIMIT 5;
 
-# Lancer l’API dans un 3eme Terminal 
+# 6. Lancer l’API dans un 3eme Terminal 
 uvicorn app.api.main:app --reload
 
 Endpoints :
