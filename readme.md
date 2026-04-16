@@ -138,7 +138,6 @@ Endpoints :
 
 http://localhost:8000/
 http://localhost:8000/docs#/
-http://localhost:8000/tips
 http://localhost:8000/stats
 
 # Lancer le Dashboard dans un 4eme Terminal
