@@ -28,7 +28,7 @@ def save_raw(df):
 # DOWNLOAD IMAGE
 # ---------------------------
 def download_image():
-    url = "https://www.data.gouv.fr/img/logo-header.svg"
+    url = "https://www.data.gouv.fr/_ipx/_/nuxt_images/logo_text.svg"
     os.makedirs("data/images", exist_ok=True)
     try:
         r = requests.get(url, timeout=10)
